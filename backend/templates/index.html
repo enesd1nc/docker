@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudNotes - Bulut Tabanlı Not Defteri</title>
+    <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg-main: #ffffff;
+            --bg-sidebar: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --shadow: rgba(0,0,0,0.1);
+        }
+
+        body.dark-mode {
+            --bg-main: #1e293b;
+            --bg-sidebar: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --shadow: rgba(0,0,0,0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--bg-main);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px var(--shadow);
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 90vh;
+            transition: all 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                display: none;
+            }
+            .sidebar.mobile-visible {
+                display: block;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 280px;
+                height: 100vh;
+                z-index: 999;
+                box-shadow: 4px 0 10px var(--shadow);
+            }
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--bg-sidebar);
+            padding: 30px 20px;
+            border-right: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: bold;
+            background: var(--bg-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: var(--bg-sidebar);
+            border: 2px solid var(--border);
+            border-radius: 50px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.2s;
+            z-index: 100;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .menu-toggle {
+            display: none;
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            background: var(--bg-main);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 20px;
+            z-index: 1000;
+        }
+
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: block;
+            }
+            .theme-toggle {
+                right: 80px;
+            }
+        }
+
+        .stats {
+            background: var(--bg-main);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .stats:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px var(--shadow);
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 12px 0;
+            font-size: 14px;
+            color: var(--text-secondary);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 16px;
+        }
+
+        .categories {
+            margin-top: 20px;
+        }
+
+        .categories h3 {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .category-item {
+            padding: 12px 15px;
+            margin: 5px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+            color: var(--text-primary);
+        }
+
+        .category-item:hover {
+            background: var(--border);
+            transform: translateX(5px);
+        }
+
+        .category-item.active {
+            background: var(--bg-gradient);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .category-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--bg-gradient);
+            color: white;
+            width: 100%;
+            margin-top: 20px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        /* Main Content */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 30px 40px;
+            background: var(--bg-main);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 14px 20px 14px 45px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.2s;
+            background: var(--bg-sidebar);
+            color: var(--text-primary);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: 15px center;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            background-color: var(--bg-main);
+        }
+
+        .btn-new-note {
+            padding: 14px 28px;
+            background: var(--bg-gradient);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-new-note::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn-new-note:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-new-note:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
+        }
+
+        .notes-grid {
+            padding: 30px 40px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .note-card {
+            background: var(--bg-main);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .note-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--bg-gradient);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .note-card:hover::before {
+            transform: scaleY(1);
+        }
+
+        .note-card:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 12px 32px var(--shadow);
+            border-color: var(--primary);
+        }
+
+        .note-title {
+            font-size: 19px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .note-preview {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.7;
+            margin-bottom: 16px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .note-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .note-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .tag {
+            background: var(--bg-sidebar);
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .tag:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .favorite-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-sidebar);
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .favorite-btn:hover {
+            transform: scale(1.2) rotate(15deg);
+            background: #fef3c7;
+            border-color: #fbbf24;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-main);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 40px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 28px;
+            font-weight: 700;
+            background: var(--bg-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .close-btn {
+            background: var(--bg-sidebar);
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #ef4444;
+            transform: rotate(90deg);
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 15px;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: inherit;
+            background: var(--bg-sidebar);
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            background: var(--bg-main);
+        }
+
+        .form-group textarea {
+            min-height: 350px;
+            resize: vertical;
+            font-family: 'Consolas', 'Monaco', monospace;
+            line-height: 1.6;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border);
+        }
+
+        .btn-save {
+            background: var(--bg-gradient);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-cancel {
+            background: var(--bg-sidebar);
+            color: var(--text-secondary);
+            border: 2px solid var(--border);
+        }
+
+        .btn-cancel:hover {
+            background: var(--border);
+            transform: translateY(-2px);
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            margin-right: auto;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-delete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-secondary);
+            animation: fadeIn 0.5s ease;
+        }
+
+        .empty-state h3 {
+            font-size: 28px;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .empty-state p {
+            font-size: 16px;
+        }
+
+        /* Kategori Modal */
+        .category-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            z-index: 1001;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .category-modal.active {
+            display: flex;
+        }
+
+        .category-modal-content {
+            background: var(--bg-main);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            padding: 35px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            animation: slideUp 0.4s ease;
+        }
+
+        .color-picker {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .color-option {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .color-option:hover {
+            transform: scale(1.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .color-option.selected {
+            border-color: var(--text-primary);
+            transform: scale(1.1);
+            box-shadow: 0 0 0 3px var(--bg-main), 0 0 0 6px var(--primary);
+        }
+
+        /* Scroll bar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-sidebar);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* Loading animation */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="logo">
+                📝 CloudNotes
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <span>Toplam Not</span>
+                    <span class="stat-value" id="totalNotes">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Kategoriler</span>
+                    <span class="stat-value" id="totalCategories">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Favoriler</span>
+                    <span class="stat-value" id="favoriteNotes">0</span>
+                </div>
+            </div>
+
+            <div class="categories">
+                <h3>Kategoriler</h3>
+                <div id="categoriesList"></div>
+            </div>
+
+            <button class="btn btn-primary" onclick="showNewCategoryModal()">
+                + Yeni Kategori
+            </button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <div class="search-bar">
+                    <input 
+                        type="text" 
+                        class="search-input" 
+                        placeholder="Notlarda ara..."
+                        id="searchInput"
+                    >
+                    <button class="btn-new-note" onclick="showNewNoteModal()">
+                        + Yeni Not
+                    </button>
+                </div>
+            </div>
+
+            <div class="notes-grid" id="notesGrid">
+                <!-- Notes will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div class="category-modal" id="categoryModal">
+        <div class="category-modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Yeni Kategori</h2>
+                <button class="close-btn" onclick="closeCategoryModal()">&times;</button>
+            </div>
+            
+            <form id="categoryForm">
+                <div class="form-group">
+                    <label>Kategori Adı</label>
+                    <input type="text" id="categoryName" required placeholder="Örn: İş, Kişisel, Ödev...">
+                </div>
+
+                <div class="form-group">
+                    <label>Renk Seçin</label>
+                    <div class="color-picker" id="colorPicker">
+                        <div class="color-option selected" style="background: #3B82F6" data-color="#3B82F6"></div>
+                        <div class="color-option" style="background: #EF4444" data-color="#EF4444"></div>
+                        <div class="color-option" style="background: #10B981" data-color="#10B981"></div>
+                        <div class="color-option" style="background: #F59E0B" data-color="#F59E0B"></div>
+                        <div class="color-option" style="background: #8B5CF6" data-color="#8B5CF6"></div>
+                        <div class="color-option" style="background: #EC4899" data-color="#EC4899"></div>
+                        <div class="color-option" style="background: #06B6D4" data-color="#06B6D4"></div>
+                        <div class="color-option" style="background: #84CC16" data-color="#84CC16"></div>
+                        <div class="color-option" style="background: #F97316" data-color="#F97316"></div>
+                        <div class="color-option" style="background: #6366F1" data-color="#6366F1"></div>
+                        <div class="color-option" style="background: #14B8A6" data-color="#14B8A6"></div>
+                        <div class="color-option" style="background: #A855F7" data-color="#A855F7"></div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeCategoryModal()">
+                        İptal
+                    </button>
+                    <button type="submit" class="btn btn-save">
+                        💾 Kaydet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Note Modal -->
+    <div class="modal" id="noteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Yeni Not</h2>
+                <button class="close-btn" onclick="closeNoteModal()">&times;</button>
+            </div>
+            
+            <form id="noteForm">
+                <input type="hidden" id="noteId">
+                
+                <div class="form-group">
+                    <label>Başlık</label>
+                    <input type="text" id="noteTitle" required placeholder="Not başlığı...">
+                </div>
+
+                <div class="form-group">
+                    <label>Kategori</label>
+                    <select id="noteCategory">
+                        <option value="">Kategori Seçin</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>İçerik (Markdown destekli)</label>
+                    <textarea id="noteContent" required placeholder="# Markdown formatında yazabilirsiniz...
+
+## Örnek
+- Liste öğesi 1
+- Liste öğesi 2
+
+**Kalın metin** ve *italik metin*
+
+```python
+# Kod blokları
+print('Hello World')
+```"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Etiketler (virgülle ayırın)</label>
+                    <input type="text" id="noteTags" placeholder="python, web, önemli">
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-delete" id="deleteBtn" onclick="deleteNote()" style="display:none;">
+                        🗑️ Sil
+                    </button>
+                    <button type="button" class="btn btn-cancel" onclick="closeNoteModal()">
+                        İptal
+                    </button>
+                    <button type="submit" class="btn btn-save">
+                        💾 Kaydet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentCategoryFilter = null;
+        let currentNoteId = null;
+        let selectedColor = '#3B82F6';
+
+        // Dark Mode
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            document.querySelector('.theme-toggle').textContent = isDark ? '☀️' : '🌙';
+        }
+
+        // Sidebar Toggle (Mobile)
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('mobile-visible');
+        }
+
+        // Load saved theme
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            document.querySelector('.theme-toggle').textContent = '☀️';
+        }
+
+        // Sayfa yüklendiğinde
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+            loadCategories();
+            loadNotes();
+
+            // Arama
+            document.getElementById('searchInput').addEventListener('input', function(e) {
+                loadNotes(currentCategoryFilter, e.target.value);
+            });
+
+            // Form submit
+            document.getElementById('noteForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveNote();
+            });
+
+            // Category Form
+            document.getElementById('categoryForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveCategory();
+            });
+
+            // Color picker
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedColor = this.dataset.color;
+                });
+            });
+        });
+
+        // İstatistikleri yükle
+        async function loadStats() {
+            const response = await fetch('/api/stats');
+            const stats = await response.json();
+            
+            document.getElementById('totalNotes').textContent = stats.total_notes;
+            document.getElementById('totalCategories').textContent = stats.total_categories;
+            document.getElementById('favoriteNotes').textContent = stats.favorite_notes;
+        }
+
+        // Kategorileri yükle
+        async function loadCategories() {
+            const response = await fetch('/api/categories');
+            const categories = await response.json();
+            
+            const list = document.getElementById('categoriesList');
+            const select = document.getElementById('noteCategory');
+            
+            list.innerHTML = `
+                <div class="category-item ${currentCategoryFilter === null ? 'active' : ''}" onclick="filterByCategory(null)">
+                    <span>📋 Tüm Notlar</span>
+                </div>
+            `;
+            
+            select.innerHTML = '<option value="">Kategori Seçin</option>';
+            
+            categories.forEach(cat => {
+                list.innerHTML += `
+                    <div class="category-item ${currentCategoryFilter === cat.id ? 'active' : ''}" onclick="filterByCategory(${cat.id})">
+                        <span>
+                            <span class="category-color" style="background: ${cat.color}; display:inline-block; vertical-align:middle;"></span>
+                            ${cat.name}
+                        </span>
+                        <span>${cat.note_count}</span>
+                    </div>
+                `;
+                
+                select.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+            });
+        }
+
+        // Notları yükle
+        async function loadNotes(categoryId = null, search = '') {
+            let url = '/api/notes?';
+            if (categoryId) url += `category_id=${categoryId}&`;
+            if (search) url += `search=${encodeURIComponent(search)}&`;
+            
+            const response = await fetch(url);
+            const notes = await response.json();
+            
+            const grid = document.getElementById('notesGrid');
+            
+            if (notes.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Henüz not yok</h3>
+                        <p>Yeni bir not oluşturarak başlayın!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = notes.map(note => `
+                <div class="note-card" onclick="editNote(${note.id})">
+                    <button class="favorite-btn" onclick="event.stopPropagation(); toggleFavorite(${note.id})" title="${note.is_favorite ? 'Favorilerden çıkar' : 'Favorilere ekle'}">
+                        ${note.is_favorite ? '⭐' : '☆'}
+                    </button>
+                    
+                    <div class="note-title">${escapeHtml(note.title)}</div>
+                    <div class="note-preview">${escapeHtml(note.content.substring(0, 150))}...</div>
+                    
+                    ${note.tags.length > 0 ? `
+                        <div class="note-tags">
+                            ${note.tags.map(tag => `<span class="tag">${escapeHtml(tag.trim())}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    <div class="note-meta">
+                        <span>${note.category_name || 'Kategorisiz'}</span>
+                        <span>${formatDate(note.updated_at)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Kategori filtresi
+        function filterByCategory(categoryId) {
+            currentCategoryFilter = categoryId;
+            loadCategories();
+            loadNotes(categoryId);
+            
+            // Mobile'da sidebar'ı kapat
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('mobile-visible');
+            }
+        }
+
+        // Yeni not modalı
+        function showNewNoteModal() {
+            currentNoteId = null;
+            document.getElementById('modalTitle').textContent = 'Yeni Not';
+            document.getElementById('noteForm').reset();
+            document.getElementById('noteId').value = '';
+            document.getElementById('deleteBtn').style.display = 'none';
+            document.getElementById('noteModal').classList.add('active');
+        }
+
+        // Not düzenle
+        async function editNote(id) {
+            currentNoteId = id;
+            const response = await fetch(`/api/notes/${id}`);
+            const note = await response.json();
+            
+            document.getElementById('modalTitle').textContent = 'Notu Düzenle';
+            document.getElementById('noteId').value = note.id;
+            document.getElementById('noteTitle').value = note.title;
+            document.getElementById('noteContent').value = note.content;
+            document.getElementById('noteCategory').value = note.category_id || '';
+            document.getElementById('noteTags').value = note.tags.join(', ');
+            document.getElementById('deleteBtn').style.display = 'block';
+            
+            document.getElementById('noteModal').classList.add('active');
+        }
+
+        // Not kaydet
+        async function saveNote() {
+            const id = document.getElementById('noteId').value;
+            const data = {
+                title: document.getElementById('noteTitle').value,
+                content: document.getElementById('noteContent').value,
+                category_id: document.getElementById('noteCategory').value || null,
+                tags: document.getElementById('noteTags').value
+            };
+            
+            const url = id ? `/api/notes/${id}` : '/api/notes';
+            const method = id ? 'PUT' : 'POST';
+            
+            await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            closeNoteModal();
+            loadStats();
+            loadNotes(currentCategoryFilter);
+        }
+
+        // Not sil
+        async function deleteNote() {
+            if (!confirm('Bu notu silmek istediğinizden emin misiniz?')) return;
+            
+            const id = document.getElementById('noteId').value;
+            await fetch(`/api/notes/${id}`, { method: 'DELETE' });
+            
+            closeNoteModal();
+            loadStats();
+            loadCategories();
+            loadNotes(currentCategoryFilter);
+        }
+
+        // Favori toggle
+        async function toggleFavorite(id) {
+            await fetch(`/api/notes/${id}/favorite`, { method: 'PATCH' });
+            loadStats();
+            loadNotes(currentCategoryFilter);
+        }
+
+        // Modal kapat
+        function closeNoteModal() {
+            document.getElementById('noteModal').classList.remove('active');
+        }
+
+        // Yardımcı fonksiyonlar
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            
+            if (days === 0) return 'Bugün';
+            if (days === 1) return 'Dün';
+            if (days < 7) return `${days} gün önce`;
+            return date.toLocaleDateString('tr-TR');
+        }
+
+        // Kategori modalı (basit prompt ile)
+        function showNewCategoryModal() {
+            document.getElementById('categoryName').value = '';
+            selectedColor = '#3B82F6';
+            document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+            document.querySelector('.color-option').classList.add('selected');
+            document.getElementById('categoryModal').classList.add('active');
+        }
+
+        function closeCategoryModal() {
+            document.getElementById('categoryModal').classList.remove('active');
+        }
+
+        async function saveCategory() {
+            const name = document.getElementById('categoryName').value;
+            
+            await fetch('/api/categories', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, color: selectedColor })
+            });
+            
+            closeCategoryModal();
+            loadStats();
+            loadCategories();
+        }
+
+        // Close modal on outside click
+        document.getElementById('noteModal').addEventListener('click', function(e) {
+            if (e.target === this) closeNoteModal();
+        });
+
+        document.getElementById('categoryModal').addEventListener('click', function(e) {
+            if (e.target === this) closeCategoryModal();
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + K: New note
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                showNewNoteModal();
+            }
+            // Escape: Close modal
+            if (e.key === 'Escape') {
+                closeNoteModal();
+                closeCategoryModal();
+            }
+        });
+    </script>
+</body>
+</html>

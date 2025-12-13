@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Veritabanı Container
+  db:
+    image: postgres:15-alpine
+    container_name: cloudnotes_db
+    environment:
+      POSTGRES_DB: cloudnotes
+      POSTGRES_USER: notesuser
+      POSTGRES_PASSWORD: securepass123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - cloudnotes_network
+    restart: unless-stopped
+
+  # Flask Web Uygulaması Container
+  web:
+    build: ./backend
+    container_name: cloudnotes_web
+    environment:
+      DATABASE_URL: postgresql://notesuser:securepass123@db:5432/cloudnotes
+      FLASK_APP: app.py
+      FLASK_ENV: development
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+    networks:
+      - cloudnotes_network
+    restart: unless-stopped
+    command: python app.py
+
+volumes:
+  postgres_data:
+
+networks:
+  cloudnotes_network:
+    driver: bridge
